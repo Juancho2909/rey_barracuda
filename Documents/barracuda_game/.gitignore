@@ -1,0 +1,17 @@
+# Ignorar archivos y carpetas comunes
+.vscode/
+*.log
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+*.env
+
+# Ignorar carpetas personales o temporales
+Downloads/
+OneDrive/
+Pictures/
+Saved Games/
+Searches/
+Videos/
+ntuser.dat*
