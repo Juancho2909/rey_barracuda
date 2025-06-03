@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 from ball import Balon
 from player import Player
 from scoreboard import Scoreboard
@@ -21,7 +22,6 @@ class Field:
         self.balon = Balon((255,0,0),10,"cuero",460,293,2,3)
         self.background = pygame.image.load("C:/Users/Juegos/Documents/barracuda_game/assets/field_image.png").convert_alpha()
         self.keys_pressed = set()
-
 
         self.zonas_prohibidas = [
             pygame.Rect(0, 0, 920, 20),
@@ -68,8 +68,11 @@ class Field:
         self.tiempo_poder_2 = 0
         self.incremento_barra = 1
         self.poder_activo = False
+        self.juego_terminado = False
+        self.ganador = ""
         self.score_equipo1 = 0
         self.score_equipo2 = 0
+
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -138,6 +141,8 @@ class Field:
         jugador2.barra_vida.x = jugador2.x
         jugador2.barra_vida.y = jugador2.y + 20
 
+        self.reset_juego()
+        self.terminar_juego(self.screen)
         if (not self.poder_ataque_activo_1 and not self.poder_ataque_activo_2 and not self.poder_defensa_activo_1 and not self.poder_defensa_activo_2):
             for jugador in self.jugadores_equipo1 + self.jugadores_equipo2:
                 jugador.colision_activa = False
@@ -152,12 +157,32 @@ class Field:
         self.balon.mover(self.width, self.height)
         #jugador1.colisiona_con_balon(self.balon,self.colision_activa)
         #jugador2.colisiona_con_balon(self.balon,self.colision_activa)
-        self.barra_poder_1.aumentar_poder(0.05 * self.incremento_barra)
-        self.barra_poder_2.aumentar_poder(0.05 * self.incremento_barra)
+        self.barra_poder_1.aumentar_poder(0.3 * self.incremento_barra)
+        self.barra_poder_2.aumentar_poder(0.3 * self.incremento_barra)
         self.actualizar_tiempo()
 
         for jugador in self.jugadores_equipo1 + self.jugadores_equipo2:
             jugador.colisiona_con_balon(self.balon)
+
+        # Movimiento aleatorio para jugadores no seleccionados
+        for equipo in [self.jugadores_equipo1, self.jugadores_equipo2]:
+            for i, jugador in enumerate(equipo):
+                if i != self.jugador_seleccionado_1 and jugador in self.jugadores_equipo1:
+                    dx = random.choice([-1, 0, 1])
+                    dy = random.choice([-1, 0, 1])
+                    jugador.x = max(0, min(self.width - jugador.rect.width, jugador.x + dx))
+                    jugador.y = max(0, min(self.height - jugador.rect.height, jugador.y + dy))
+                    jugador.barra_vida.x = jugador.x
+                    jugador.barra_vida.y = jugador.y + 35
+                    jugador.actualizar_rect()
+                if i != self.jugador_seleccionado_2 and jugador in self.jugadores_equipo2:
+                    dx = random.choice([-1, 0, 1])
+                    dy = random.choice([-1, 0, 1])
+                    jugador.x = max(0, min(self.width - jugador.rect.width, jugador.x + dx))
+                    jugador.y = max(0, min(self.height - jugador.rect.height, jugador.y + dy))
+                    jugador.barra_vida.x = jugador.x
+                    jugador.barra_vida.y = jugador.y + 35
+                    jugador.actualizar_rect()
 
         for zona in self.zonas_prohibidas:
             # Balón y zonas
@@ -194,7 +219,7 @@ class Field:
                 jugador2.tiro_activo = False
                 if zona_gol == self.zonas_gol[0]:
                     self.marcador.aumentar_score(2)
-                    self.reiniciar_posiciones
+                    self.reiniciar_posiciones()
                     self.score_equipo2 += 5
 
                     if self.tiempo_poder_2 > 0:
@@ -203,8 +228,11 @@ class Field:
                     if self.tiempo_poder_1 > 0:
                         self.incremento_barra = 3
                     self.marcador.aumentar_score(1)
-                    self.reiniciar_posiciones
+                    self.reiniciar_posiciones()
                     self.score_equipo1 += 5
+                    if self.tiempo_poder_2 > 0:
+                        self.incremento_barra = 3
+
 
                 self.balon.x = self.width // 2
                 self.balon.y = self.height // 2
@@ -223,6 +251,7 @@ class Field:
                 jugador2.actualizar_rect()
 
     def draw(self):
+    
         self.screen.blit(self.background,(0,0))
         self.marcador.dibujar(self.screen)
         self.game_clock.draw(self.screen)
@@ -244,28 +273,28 @@ class Field:
 
     def actualizar_tiempo(self):
         if self.poder_ataque_activo_1:
-            self.balon.color = (0, 255, 0)
+            self.balon.color = (0, 0, 255)
             self.tiempo_poder_1 += 1
-            if self.tiempo_poder_1 >= 420:
+            if self.tiempo_poder_1 >= 600:
                 self.tiempo_poder_1 = 0
                 self.poder_ataque_activo_1 = False
 
         if self.poder_defensa_activo_1:
             self.tiempo_poder_1 += 1
-            if self.tiempo_poder_1 >= 420:
+            if self.tiempo_poder_1 >= 600:
                 self.tiempo_poder_1 = 0
                 self.poder_defensa_activo_1 = False
 
         if self.poder_defensa_activo_2:
             self.tiempo_poder_2 += 1
-            if self.tiempo_poder_2 >= 420:
+            if self.tiempo_poder_2 >= 600:
                 self.tiempo_poder_2 = 0
                 self.poder_defensa_activo_2 = False
 
         if self.poder_ataque_activo_2:
-            self.balon.color = (0, 255, 0)
+            self.balon.color = (255, 0, 0)
             self.tiempo_poder_2 += 1
-            if self.tiempo_poder_2 >= 420:
+            if self.tiempo_poder_2 >= 600:
                 self.tiempo_poder_2 = 0
                 self.poder_ataque_activo_2 = False
 
@@ -283,55 +312,141 @@ class Field:
         pygame.draw.rect(self.screen, (255, 0, 0), (self.jugadores_equipo2[self.jugador_seleccionado_2].x-25,
                                                     self.jugadores_equipo2[self.jugador_seleccionado_2].y-25,
                                                     20, 20))
-     
+    
         if self.poder_defensa_activo_1:
             pygame.draw.rect(self.screen, (0, 255, 255), (self.jugadores_equipo1[self.jugador_seleccionado_1].x-25,
                                                         self.jugadores_equipo1[self.jugador_seleccionado_1].y-25,
-                                                        50,50),3)                                         
+                                                    50,50),3)                                         
         if self.poder_defensa_activo_2:
             pygame.draw.rect(self.screen, (255, 255, 0), (self.jugadores_equipo2[self.jugador_seleccionado_2].x-25,
                                                         self.jugadores_equipo2[self.jugador_seleccionado_2].y-25,
                                                       50, 50), 3)
 
     def actualizar_barra_vida(self):
+        # Validar que los índices aún sean válidos
+        if self.jugador_seleccionado_1 >= len(self.jugadores_equipo1):
+            self.jugador_seleccionado_1 = max(0, len(self.jugadores_equipo1) - 1)
+
+        if self.jugador_seleccionado_2 >= len(self.jugadores_equipo2):
+            self.jugador_seleccionado_2 = max(0, len(self.jugadores_equipo2) - 1)
+
+        # Si no quedan jugadores, no hacer nada
+        if not self.jugadores_equipo1 or not self.jugadores_equipo2:
+            return
+
         jugador1 = self.jugadores_equipo1[self.jugador_seleccionado_1]
         jugador2 = self.jugadores_equipo2[self.jugador_seleccionado_2]
 
+        # Equipo 1 ataca a jugadores del equipo 2
         for jugador in self.jugadores_equipo2:    
             if jugador.colision_activa and self.poder_ataque_activo_1:
                 jugador.barra_vida.set_health(jugador2.dano_tiro)
                 self.score_equipo1 += 3
                 jugador.colision_activa = False
 
+        # Equipo 2 ataca a jugadores del equipo 1
         for jugador in self.jugadores_equipo1:  
             if jugador.colision_activa and self.poder_ataque_activo_2:
                 jugador.barra_vida.set_health(jugador1.dano_tiro)
-                self.score_equipo1 += 3
+                self.score_equipo2 += 3
                 jugador.colision_activa = False
 
+
     def reset_juego(self):
-        if self.game_clock.get_elapsed_time == 300000:
-            self.game_clock.reset
-        for jugador in self.jugadores_equipo1:
-            jugador.barra_vida.current_health     
+        # Verificar si han pasado al menos 5 segundos (la función ya devuelve en segundos)
+        if self.game_clock.get_elapsed_time() >= 5:
+            self.game_clock.reset()
+
+            equipo1_len = len(self.jugadores_equipo1)
+            equipo2_len = len(self.jugadores_equipo2)
+
+            # Si un equipo ya no tiene jugadores, el otro gana
+            if equipo1_len == 0:
+                self.juego_terminado = True
+                self.ganador = "Equipo 2"
+                return  # Detener ejecución
+            elif equipo2_len == 0:
+                self.juego_terminado = True
+                self.ganador = "Equipo 1"
+                return  # Detener ejecución
+
+            # Si solo queda uno por equipo: ronda final → termina definitivamente
+            if equipo1_len == 1 and equipo2_len == 1:
+                j1 = self.jugadores_equipo1[0]
+                j2 = self.jugadores_equipo2[0]
+
+                if j1.barra_vida.current_health <= 0 and j2.barra_vida.current_health <= 0:
+                    self.juego_terminado = True
+                    self.ganador = "Empate"
+                elif j1.barra_vida.current_health <= 0:
+                    self.juego_terminado = True
+                    self.ganador = "Equipo 2"
+                elif j2.barra_vida.current_health <= 0:
+                    self.juego_terminado = True
+                    self.ganador = "Equipo 1"
+                return  # Detener ejecución
+
+            # Ambos equipos tienen más de un jugador
+            if equipo1_len > 1 and equipo2_len > 1:
+                vidas_equipo1 = [j.barra_vida.current_health for j in self.jugadores_equipo1]
+                vidas_equipo2 = [j.barra_vida.current_health for j in self.jugadores_equipo2]
+
+                eliminacion = False
+
+                if len(set(vidas_equipo1)) > 1:
+                    jugador_mas_debil_1 = min(self.jugadores_equipo1, key=lambda j: j.barra_vida.current_health)
+                    self.jugadores_equipo1.remove(jugador_mas_debil_1)
+                    eliminacion = True
+
+                if len(set(vidas_equipo2)) > 1:
+                    jugador_mas_debil_2 = min(self.jugadores_equipo2, key=lambda j: j.barra_vida.current_health)
+                    self.jugadores_equipo2.remove(jugador_mas_debil_2)
+                    eliminacion = True
+
+                if eliminacion:
+                    self.reiniciar_posiciones()
+
 
     def reiniciar_posiciones(self):
-        self.jugadores_equipo1[0].x = 100
-        self.jugadores_equipo1[0].y = 221
-        self.jugadores_equipo1[1].x = 100
-        self.jugadores_equipo1[1].y = 381
-        self.jugadores_equipo1[2].x = 320
-        self.jugadores_equipo1[2].y = 221
-        self.jugadores_equipo1[3].x = 320
-        self.jugadores_equipo1[3].y = 381
-        self.jugadores_equipo2[0].x = 600
-        self.jugadores_equipo2[0].y = 221
-        self.jugadores_equipo2[1].x = 600
-        self.jugadores_equipo2[1].y = 381
-        self.jugadores_equipo2[2].x = 820
-        self.jugadores_equipo2[2].y = 221
-        self.jugadores_equipo2[3].x = 820
-        self.jugadores_equipo2[3].y = 381
+        # Posiciones predefinidas por equipo
+        posiciones_equipo1 = [(100, 221), (100, 381), (320, 221), (320, 381)]
+        posiciones_equipo2 = [(600, 221), (600, 381), (820, 221), (820, 381)]
+
+        # Reasignar posiciones a los jugadores restantes del equipo 1
+        for jugador, pos in zip(self.jugadores_equipo1, posiciones_equipo1):
+            jugador.x, jugador.y = pos
+
+        # Reasignar posiciones a los jugadores restantes del equipo 2
+        for jugador, pos in zip(self.jugadores_equipo2, posiciones_equipo2):
+            jugador.x, jugador.y = pos
+
+    def terminar_juego(self, surface):
+        if self.juego_terminado:
+            # Dibujar ventana de resultado
+            surface.fill((0, 0, 0))  # Fondo negro
+
+            font = pygame.font.SysFont(None, 60)
+            mensaje = f"¡{self.ganador} ha ganado! con Score"
+            texto = font.render(mensaje, True, (255, 255, 255))  # Texto blanco
+            rect = texto.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
+
+            surface.blit(texto, rect)
+
+            pygame.display.flip()  # Actualizar la pantalla
+
+            # Esperar 3 segundos o hasta que el usuario cierre
+            esperar = True
+            tiempo_mostrar = pygame.time.get_ticks()
+            while esperar:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+                        esperar = False
+
+                if pygame.time.get_ticks() - tiempo_mostrar > 50000:  # 3 segundos
+                    esperar = False
+
+            pygame.quit()
+            sys.exit()
 
 
     def run(self):

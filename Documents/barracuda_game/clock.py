@@ -19,7 +19,7 @@ class Clock:
     def get_elapsed_time(self):
         """Devuelve el tiempo transcurrido en segundos"""
         elapsed_ms = pygame.time.get_ticks() - self.start_ticks
-        return elapsed_ms // 1000
+        return elapsed_ms // 1000 
 
     def reset(self):
         """Reinicia el cronómetro"""
